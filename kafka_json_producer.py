@@ -150,8 +150,8 @@ again creating an instance of Schema classs.
 '''
     schema_str=schema.schema.schema_str
 '''
-first schema is instance of above class again second schema is it's instance variable which is again a inatance of Schema class and in schema class there is a varibale
-named as schema_str, we are fetching that schema_str value and assigning it to a variable called as schem_str 
+first schema is instance of RegisteredSchema class used above again second schema is it's instance variable which is again a instance of Schema class and in Schema class there is a varibale
+named as schema_str, we are fetching that schema_str value and assigning it to a variable called as schem_str.
 '''
 
     string_serializer = StringSerializer('utf_8') # used to generate key for producer class.
@@ -169,7 +169,7 @@ named as schema_str, we are fetching that schema_str value and assigning it to a
             print(car)
             producer.produce(topic=topic, # Passing name of the topic
                             key=string_serializer(str(uuid4())), # This line is crating key to be binded with value which will be then need for hashing and partition
-                            value=json_serializer(car, SerializationContext(topic, MessageField.VALUE)), #
+                            value=json_serializer(car, SerializationContext(topic, MessageField.VALUE)), # Creating values using json_serializer
                             on_delivery=delivery_report)
             break
     except KeyboardInterrupt:
