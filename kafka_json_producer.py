@@ -71,7 +71,7 @@ class Car:
         for k,v in record.items():
             setattr(self,k,v)
         
-        self.record=record
+        self.record=record # This create an instance variable with the name record that holds the dictionary as it is.
    
     @staticmethod
     def dict_to_car(data:dict,ctx):
@@ -79,7 +79,10 @@ class Car:
 
     def __str__(self):
         return f"{self.record}"
+'''
+This line takes dictionary as a input and set key of dictionary as class attributes and values of dictionary as value. It is used by below funtion get_car_instance.
 
+'''
 
 def get_car_instance(file_path):
     df=pd.read_csv(file_path)
@@ -89,6 +92,12 @@ def get_car_instance(file_path):
         car=Car(dict(zip(columns,data)))
         cars.append(car)
         yield car
+              
+'''
+Above function takes file path as an input and read it as a data frame. Then removes its first value and read it line by line i.e. 1 row at a time and zip it with 
+column names and converts it into a car object, every time this function yield a car object(i.e. returns current line by converting to car object) and at the same 
+time it is created a list of cars and appends each object one by one as a whole.
+'''
 
 def car_to_dict(car:Car, ctx):
     """
@@ -103,7 +112,7 @@ def car_to_dict(car:Car, ctx):
 
     # User._address must not be serialized; omit from dict
     return car.record
-
+# Simply returns record instance variable which is holding dictionary as it is 
 
 def delivery_report(err, msg):
     """
@@ -121,30 +130,46 @@ def delivery_report(err, msg):
 
 
 def main(topic):
-    schema_registry_conf = schema_config()
-    schema_registry_client = SchemaRegistryClient(schema_registry_conf)
+    schema_registry_conf = schema_config() # Calls schema_config that returns dictionary of schema registry attributes needed for authentications and more.
+    schema_registry_client = SchemaRegistryClient(schema_registry_conf) # Basically passing schema registry attributes to instance of this class.
     # subjects = schema_registry_client.get_subjects()
     # print(subjects)
-    subject = topic+'-value'
+    subject = topic+'-value' # Creating a subject variable according to convention <topic_name-value> here value is verion of schema registry.
 
     schema = schema_registry_client.get_latest_version(subject)
+'''
+Above line uses instance schema_registry_client to access it's function get_latest_version which returns following
+        return RegisteredSchema(schema_id=response['id'],
+                                schema=Schema(response['schema'],
+                                              schema_type,
+                                              response.get('references', [])),
+                                subject=response['subject'],
+                                version=response['version'])
+that means schema variable used above is nothing but an instance of class RisteredSchema(). here schema is a instance variable of class RegisteredSchema which is 
+again creating an instance of Schema classs.
+'''
     schema_str=schema.schema.schema_str
+'''
+first schema is instance of above class again second schema is it's instance variable which is again a inatance of Schema class and in schema class there is a varibale
+named as schema_str, we are fetching that schema_str value and assigning it to a variable called as schem_str 
+'''
 
-    string_serializer = StringSerializer('utf_8')
-    json_serializer = JSONSerializer(schema_str, schema_registry_client, car_to_dict)
+    string_serializer = StringSerializer('utf_8') # used to generate key for producer class.
+    json_serializer = JSONSerializer(schema_str, schema_registry_client, car_to_dict) # Above fetched schema_str we are using here to create an object of this class.
+
 
     producer = Producer(sasl_conf())
 
     print("Producing user records to topic {}. ^C to exit.".format(topic))
     #while True:
         # Serve on_delivery callbacks from previous calls to produce()
-    producer.poll(0.0)
+    producer.poll(0.0) 
     try:
-        for car in get_car_instance(file_path=FILE_PATH):
+        for car in get_car_instance(file_path=FILE_PATH): # get_car_instance yields car object of type Car line by line
             print(car)
-            producer.produce(topic=topic,
-                            key=string_serializer(str(uuid4())),
-                            value=json_serializer(car, SerializationContext(topic, MessageField.VALUE)),
+            producer.produce(topic=topic, # Passing name of the topic
+                            key=string_serializer(str(uuid4())), # This line is crating key to be binded with value which will be then need for hashing and partition
+                            value=json_serializer(car, SerializationContext(topic, MessageField.VALUE)), #
                             on_delivery=delivery_report)
             break
     except KeyboardInterrupt:
